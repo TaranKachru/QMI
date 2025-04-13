@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QMI Questionnaire</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-5xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6 text-center">QMI Quality Assessment</h1>
+    <form id="qmiForm" class="space-y-6">
+      <!-- Questions will be inserted here by JavaScript -->
+    </form>
+    <div class="text-center mt-8">
+      <button onclick="calculateQMI()" class="bg-blue-600 text-white px-6 py-2 rounded shadow hover:bg-blue-700">Calculate QMI Score</button>
+      <p id="qmiScore" class="text-xl font-semibold mt-4"></p>
+    </div>
+  </div>
+
+  <script>
+    const criteria = [
+      {
+        label: "Leadership Commitment",
+        weight: 8,
+        subcriteria: [
+          "Top management quality policies",
+          "Leadership in quality reviews",
+          "Delegation of quality responsibilities"
+        ]
+      },
+      {
+        label: "Workforce Training & Competency",
+        weight: 7,
+        subcriteria: [
+          "Skill development programs",
+          "Periodic training reviews",
+          "Certifications of workforce"
+        ]
+      },
+      {
+        label: "Strategic Planning & Governance",
+        weight: 8,
+        subcriteria: [
+          "Alignment of quality with strategy",
+          "Governance structure for QA",
+          "Stakeholder involvement"
+        ]
+      },
+      {
+        label: "Construction Process Quality",
+        weight: 7,
+        subcriteria: [
+          "Process documentation",
+          "Standard operating procedures",
+          "Process compliance"
+        ]
+      },
+      {
+        label: "Inspection & Testing Protocols",
+        weight: 7,
+        subcriteria: [
+          "Defined inspection checkpoints",
+          "Frequency of tests",
+          "Accuracy of testing reports"
+        ]
+      },
+      {
+        label: "Internal Quality Audits",
+        weight: 6,
+        subcriteria: [
+          "Audit frequency",
+          "Third-party audits",
+          "Corrective actions tracking"
+        ]
+      },
+      {
+        label: "Documentation & Records",
+        weight: 6,
+        subcriteria: [
+          "Up-to-date documentation",
+          "Digital records",
+          "Ease of traceability"
+        ]
+      },
+      {
+        label: "Material Quality Management",
+        weight: 7,
+        subcriteria: [
+          "Material inspection protocols",
+          "Vendor quality checks",
+          "Traceability of materials"
+        ]
+      },
+      {
+        label: "Procurement & Supplier Management",
+        weight: 6,
+        subcriteria: [
+          "Supplier qualification",
+          "Procurement quality clauses",
+          "Delivery verification"
+        ]
+      },
+      {
+        label: "Technology Adoption in QA/QC",
+        weight: 8,
+        subcriteria: [
+          "Use of BIM, IoT, etc.",
+          "Digital inspection tools",
+          "Integration with quality dashboards"
+        ]
+      },
+      {
+        label: "Continual Improvement & Innovation",
+        weight: 6,
+        subcriteria: [
+          "Feedback loop effectiveness",
+          "Innovation in processes",
+          "Learning management system"
+        ]
+      },
+      {
+        label: "Customer Feedback & Satisfaction",
+        weight: 7,
+        subcriteria: [
+          "Structured feedback mechanism",
+          "Complaint resolution time",
+          "Post-handover surveys"
+        ]
+      },
+      {
+        label: "Safety & Compliance Management",
+        weight: 9,
+        subcriteria: [
+          "Adherence to safety regulations",
+          "Incident response plan",
+          "Training on safety protocols"
+        ]
+      }
+    ];
+
+    const form = document.getElementById('qmiForm');
+
+    criteria.forEach((item, i) => {
+      const section = document.createElement('div');
+      section.className = 'bg-white rounded p-4 shadow';
+      section.innerHTML = `<h2 class="text-xl font-semibold mb-2">${item.label} (Weight: ${item.weight}%)</h2>`;
+
+      item.subcriteria.forEach((sub, j) => {
+        section.innerHTML += `
+          <div class="mb-3">
+            <label class="block text-sm mb-1">${sub}</label>
+            <input type="number" min="0" max="10" data-criteria="${i}" class="sub-score w-full border rounded px-3 py-1" oninput="validateInput(this)" />
+            <p class="text-red-500 text-sm hidden">Score must be between 0 and 10</p>
+          </div>
+        `;
+      });
+
+      form.appendChild(section);
+    });
+
+    function validateInput(input) {
+      const value = parseInt(input.value);
+      const errorText = input.nextElementSibling;
+
+      if (value > 10 || value < 0) {
+        errorText.classList.remove("hidden");
+        input.classList.add("border-red-500");
+      } else {
+        errorText.classList.add("hidden");
+        input.classList.remove("border-red-500");
+      }
+    }
+
+    function calculateQMI() {
+      const allInputs = document.querySelectorAll('.sub-score');
+      const scores = Array(criteria.length).fill(null).map(() => []);
+
+      let valid = true;
+      allInputs.forEach(input => {
+        const value = parseInt(input.value);
+        if (value > 10 || value < 0) {
+          input.classList.add("border-red-500");
+          input.nextElementSibling.classList.remove("hidden");
+          valid = false;
+        } else {
+          input.classList.remove("border-red-500");
+          input.nextElementSibling.classList.add("hidden");
+        }
+        const index = input.dataset.criteria;
+        scores[index].push(value || 0);
+      });
+
+      if (!valid) {
+        document.getElementById('qmiScore').innerText = "Please correct invalid inputs first.";
+        return;
+      }
+
+      let weightedSum = 0;
+      let totalWeight = 0;
+
+      scores.forEach((subScores, i) => {
+        const avg = subScores.reduce((a, b) => a + b, 0) / subScores.length;
+        weightedSum += avg * criteria[i].weight;
+        totalWeight += criteria[i].weight;
+      });
+
+      const qmiScore = (weightedSum / totalWeight).toFixed(2);
+      document.getElementById('qmiScore').innerText = `QMI Score: ${qmiScore} / 10`;
+    }
+  </script>
+</body>
+</html>
