@@ -3,211 +3,445 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>QMI Questionnaire</title>
+  <title>QMI Quality Assessment</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    body {
+      background-color: #f8fafc;
+    }
+    .rating-scale {
+      display: flex;
+      justify-content: space-between;
+      margin: 1.5rem 0;
+      gap: 0.5rem;
+    }
+    .rating-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      flex: 1;
+    }
+    .rating-number {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      transition: all 0.2s;
+      border: 2px solid #e2e8f0;
+      background-color: #f8fafc;
+      color: #334155;
+      font-size: 0.95rem;
+    }
+    .rating-number:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      border-color: #93c5fd;
+    }
+    .rating-number.selected {
+      background-color: #1d4ed8;
+      color: white;
+      border-color: #1d4ed8;
+      box-shadow: 0 4px 6px -1px rgba(29, 78, 216, 0.3);
+    }
+    .progress-bar {
+      height: 8px;
+      background-color: #e2e8f0;
+      border-radius: 4px;
+      margin-bottom: 2.5rem;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #1d4ed8, #3b82f6);
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+    .subcriteria-title {
+      position: relative;
+      padding-left: 1.25rem;
+    }
+    .subcriteria-title:before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 8px;
+      height: 8px;
+      background-color: #1d4ed8;
+      border-radius: 50%;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-5xl mx-auto">
-    <h1 class="text-3xl font-bold mb-6 text-center">QMI Quality Assessment</h1>
-    <form id="qmiForm" class="space-y-6">
-      <!-- Questions will be inserted here by JavaScript -->
-    </form>
-    <div class="text-center mt-8">
-      <button onclick="calculateQMI()" class="bg-blue-600 text-white px-6 py-2 rounded shadow hover:bg-blue-700">Calculate QMI Score</button>
-      <p id="qmiScore" class="text-xl font-semibold mt-4"></p>
+<body class="min-h-screen">
+  <div class="max-w-4xl mx-auto p-6">
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+      <div class="p-8">
+        <div class="flex items-center mb-6">
+          <div class="w-12 h-12 rounded-lg bg-blue-600 flex items-center justify-center mr-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-3xl font-bold text-gray-800">QMI Quality Assessment</h1>
+            <p class="text-gray-600">Evaluate your organization's quality management practices</p>
+          </div>
+        </div>
+        
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressBar"></div>
+        </div>
+        
+        <form id="qmiForm" class="space-y-8">
+          <!-- Questions will be inserted here by JavaScript -->
+        </form>
+        
+        <div class="flex justify-between mt-8 pt-6 border-t border-gray-100">
+          <button id="prevBtn" class="flex items-center text-blue-600 hover:text-blue-800 font-medium hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+            Previous
+          </button>
+          <button id="nextBtn" class="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-md transition-all">
+            Next
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div id="resultsSection" class="hidden mt-8 bg-white rounded-xl shadow-lg p-8 text-center border border-gray-100">
+      <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">Assessment Complete</h2>
+      <p id="qmiScore" class="text-4xl font-semibold mb-6"></p>
+      <p class="text-gray-600 max-w-md mx-auto mb-6">Your Quality Management Index score reflects your organization's current quality practices and areas for improvement.</p>
+      <button onclick="resetForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg shadow-md transition-all">
+        Start New Assessment
+      </button>
     </div>
   </div>
 
   <script>
     const criteria = [
       {
-        label: "Leadership Commitment",
+        label: "1. Leadership Commitment",
         weight: 8,
         subcriteria: [
-          "Top management quality policies",
-          "Leadership in quality reviews",
-          "Delegation of quality responsibilities"
+          "1.1 Top management quality policies",
+          "1.2 Leadership in quality reviews",
+          "1.3 Delegation of quality responsibilities"
         ]
       },
       {
-        label: "Workforce Training & Competency",
+        label: "2. Workforce Training & Competency",
         weight: 7,
         subcriteria: [
-          "Skill development programs",
-          "Periodic training reviews",
-          "Certifications of workforce"
+          "2.1 Skill development programs",
+          "2.2 Periodic training reviews",
+          "2.3 Certifications of workforce"
         ]
       },
       {
-        label: "Strategic Planning & Governance",
+        label: "3. Strategic Planning & Governance",
         weight: 8,
         subcriteria: [
-          "Alignment of quality with strategy",
-          "Governance structure for QA",
-          "Stakeholder involvement"
+          "3.1 Alignment of quality with strategy",
+          "3.2 Governance structure for QA",
+          "3.3 Stakeholder involvement"
         ]
       },
       {
-        label: "Construction Process Quality",
+        label: "4. Construction Process Quality",
         weight: 7,
         subcriteria: [
-          "Process documentation",
-          "Standard operating procedures",
-          "Process compliance"
+          "4.1 Process documentation",
+          "4.2 Standard operating procedures",
+          "4.3 Process compliance"
         ]
       },
       {
-        label: "Inspection & Testing Protocols",
+        label: "5. Inspection & Testing Protocols",
         weight: 7,
         subcriteria: [
-          "Defined inspection checkpoints",
-          "Frequency of tests",
-          "Accuracy of testing reports"
+          "5.1 Defined inspection checkpoints",
+          "5.2 Frequency of tests",
+          "5.3 Accuracy of testing reports"
         ]
       },
       {
-        label: "Internal Quality Audits",
+        label: "6. Internal Quality Audits",
         weight: 6,
         subcriteria: [
-          "Audit frequency",
-          "Third-party audits",
-          "Corrective actions tracking"
+          "6.1 Audit frequency",
+          "6.2 Third-party audits",
+          "6.3 Corrective actions tracking"
         ]
       },
       {
-        label: "Documentation & Records",
+        label: "7. Documentation & Records",
         weight: 6,
         subcriteria: [
-          "Up-to-date documentation",
-          "Digital records",
-          "Ease of traceability"
+          "7.1 Up-to-date documentation",
+          "7.2 Digital records",
+          "7.3 Ease of traceability"
         ]
       },
       {
-        label: "Material Quality Management",
+        label: "8. Material Quality Management",
         weight: 7,
         subcriteria: [
-          "Material inspection protocols",
-          "Vendor quality checks",
-          "Traceability of materials"
+          "8.1 Material inspection protocols",
+          "8.2 Vendor quality checks",
+          "8.3 Traceability of materials"
         ]
       },
       {
-        label: "Procurement & Supplier Management",
+        label: "9. Procurement & Supplier Management",
         weight: 6,
         subcriteria: [
-          "Supplier qualification",
-          "Procurement quality clauses",
-          "Delivery verification"
+          "9.1 Supplier qualification",
+          "9.2 Procurement quality clauses",
+          "9.3 Delivery verification"
         ]
       },
       {
-        label: "Technology Adoption in QA/QC",
+        label: "10. Technology Adoption in QA/QC",
         weight: 8,
         subcriteria: [
-          "Use of BIM, IoT, etc.",
-          "Digital inspection tools",
-          "Integration with quality dashboards"
+          "10.1 Use of BIM, IoT, etc.",
+          "10.2 Digital inspection tools",
+          "10.3 Integration with quality dashboards"
         ]
       },
       {
-        label: "Continual Improvement & Innovation",
+        label: "11. Continual Improvement & Innovation",
         weight: 6,
         subcriteria: [
-          "Feedback loop effectiveness",
-          "Innovation in processes",
-          "Learning management system"
+          "11.1 Feedback loop effectiveness",
+          "11.2 Innovation in processes",
+          "11.3 Learning management system"
         ]
       },
       {
-        label: "Customer Feedback & Satisfaction",
+        label: "12. Customer Feedback & Satisfaction",
         weight: 7,
         subcriteria: [
-          "Structured feedback mechanism",
-          "Complaint resolution time",
-          "Post-handover surveys"
+          "12.1 Structured feedback mechanism",
+          "12.2 Complaint resolution time",
+          "12.3 Post-handover surveys"
         ]
       },
       {
-        label: "Safety & Compliance Management",
+        label: "13. Safety & Compliance Management",
         weight: 9,
         subcriteria: [
-          "Adherence to safety regulations",
-          "Incident response plan",
-          "Training on safety protocols"
+          "13.1 Adherence to safety regulations",
+          "13.2 Incident response plan",
+          "13.3 Training on safety protocols"
         ]
       }
     ];
 
+    let currentQuestion = 0;
     const form = document.getElementById('qmiForm');
+    const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const progressBar = document.getElementById('progressBar');
+    const resultsSection = document.getElementById('resultsSection');
+    const qmiScoreElement = document.getElementById('qmiScore');
+    
+    // Store all responses
+    const responses = Array(criteria.length).fill().map(() => Array(3).fill(null));
 
-    criteria.forEach((item, i) => {
+    function showQuestion(index) {
+      form.innerHTML = '';
+      const item = criteria[index];
+      
       const section = document.createElement('div');
-      section.className = 'bg-white rounded p-4 shadow';
-      section.innerHTML = `<h2 class="text-xl font-semibold mb-2">${item.label} (Weight: ${item.weight}%)</h2>`;
+      section.className = 'bg-white rounded-lg p-6 border border-gray-100 shadow-sm';
+      section.innerHTML = `
+        <h2 class="text-xl font-semibold text-gray-800 mb-6 pb-2 border-b border-gray-100">${item.label}</h2>
+      `;
 
       item.subcriteria.forEach((sub, j) => {
         section.innerHTML += `
-          <div class="mb-3">
-            <label class="block text-sm mb-1">${sub}</label>
-            <input type="number" min="0" max="10" data-criteria="${i}" class="sub-score w-full border rounded px-3 py-1" oninput="validateInput(this)" />
-            <p class="text-red-500 text-sm hidden">Score must be between 0 and 10</p>
+          <div class="mb-8">
+            <h3 class="text-lg font-medium text-gray-700 mb-4 subcriteria-title">${sub}</h3>
+            <div class="rating-scale" data-criteria="${index}" data-subcriteria="${j}">
+              ${Array.from({length: 10}, (_, i) => i + 1).map(num => `
+                <div class="rating-option" onclick="selectRating(this, ${index}, ${j})">
+                  <div class="rating-number ${responses[index][j] === num ? 'selected' : ''}" data-value="${num}">${num}</div>
+                </div>
+              `).join('')}
+            </div>
+            <div class="flex justify-between text-sm text-gray-500 mt-3 px-2">
+              <span>Not satisfied</span>
+              <span>Very satisfied</span>
+            </div>
           </div>
         `;
       });
 
       form.appendChild(section);
-    });
+      
+      // Update progress bar
+      progressBar.style.width = `${((index + 1) / criteria.length) * 100}%`;
+      
+      // Update button visibility
+      prevBtn.classList.toggle('hidden', index === 0);
+      nextBtn.textContent = index === criteria.length - 1 ? 'Calculate Score' : 'Next';
+    }
 
-    function validateInput(input) {
-      const value = parseInt(input.value);
-      const errorText = input.nextElementSibling;
-
-      if (value > 10 || value < 0) {
-        errorText.classList.remove("hidden");
-        input.classList.add("border-red-500");
-      } else {
-        errorText.classList.add("hidden");
-        input.classList.remove("border-red-500");
-      }
+    function selectRating(element, criteriaIndex, subcriteriaIndex) {
+      const ratingNumber = element.querySelector('.rating-number');
+      const value = parseInt(ratingNumber.dataset.value);
+      
+      // Remove selected class from all options in this group
+      const ratingScale = element.parentElement;
+      ratingScale.querySelectorAll('.rating-number').forEach(el => {
+        el.classList.remove('selected');
+      });
+      
+      // Add selected class to clicked option
+      ratingNumber.classList.add('selected');
+      
+      // Store the response
+      responses[criteriaIndex][subcriteriaIndex] = value;
     }
 
     function calculateQMI() {
-      const allInputs = document.querySelectorAll('.sub-score');
-      const scores = Array(criteria.length).fill(null).map(() => []);
-
-      let valid = true;
-      allInputs.forEach(input => {
-        const value = parseInt(input.value);
-        if (value > 10 || value < 0) {
-          input.classList.add("border-red-500");
-          input.nextElementSibling.classList.remove("hidden");
-          valid = false;
-        } else {
-          input.classList.remove("border-red-500");
-          input.nextElementSibling.classList.add("hidden");
-        }
-        const index = input.dataset.criteria;
-        scores[index].push(value || 0);
-      });
-
-      if (!valid) {
-        document.getElementById('qmiScore').innerText = "Please correct invalid inputs first.";
-        return;
-      }
-
       let weightedSum = 0;
       let totalWeight = 0;
 
-      scores.forEach((subScores, i) => {
+      responses.forEach((subScores, i) => {
         const avg = subScores.reduce((a, b) => a + b, 0) / subScores.length;
         weightedSum += avg * criteria[i].weight;
         totalWeight += criteria[i].weight;
       });
 
       const qmiScore = (weightedSum / totalWeight).toFixed(2);
-      document.getElementById('qmiScore').innerText = `QMI Score: ${qmiScore} / 10`;
+      
+      // Display results
+      let scoreColor = 'text-blue-600';
+      let scoreMessage = 'Good';
+      
+      if (qmiScore >= 8) {
+        scoreColor = 'text-green-600';
+        scoreMessage = 'Excellent';
+        triggerConfetti({ intensity: 'high' });
+      } else if (qmiScore >= 5) {
+        triggerConfetti({ intensity: 'medium' });
+      } else {
+        scoreColor = 'text-red-600';
+        scoreMessage = 'Needs Improvement';
+      }
+      
+      qmiScoreElement.innerHTML = `
+        <span class="${scoreColor} font-bold">${qmiScore}/10</span>
+        <div class="text-lg ${scoreColor} mt-2">${scoreMessage}</div>
+      `;
+      
+      // Show results section
+      form.classList.add('hidden');
+      resultsSection.classList.remove('hidden');
     }
+
+    // ===== ENHANCED CONFETTI EFFECT =====
+    function triggerConfetti({ intensity = 'medium' } = {}) {
+      const baseConfig = {
+        particleCount: intensity === 'high' ? 150 : 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#1d4ed8', '#3b82f6', '#93c5fd'],
+        shapes: ['circle', 'square'],
+        scalar: 0.8
+      };
+
+      // Main burst
+      confetti({
+        ...baseConfig,
+        angle: 90,
+        gravity: 0.5
+      });
+
+      // Left diagonal burst
+      setTimeout(() => {
+        confetti({
+          ...baseConfig,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 }
+        });
+      }, 150);
+
+      // Right diagonal burst
+      setTimeout(() => {
+        confetti({
+          ...baseConfig,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 }
+        });
+      }, 300);
+
+      // Additional bursts for high scores
+      if (intensity === 'high') {
+        setTimeout(() => {
+          confetti({
+            ...baseConfig,
+            particleCount: 50,
+            startVelocity: 35,
+            decay: 0.91
+          });
+        }, 450);
+      }
+    }
+
+    function resetForm() {
+      currentQuestion = 0;
+      responses.forEach(arr => arr.fill(null));
+      form.classList.remove('hidden');
+      resultsSection.classList.add('hidden');
+      showQuestion(0);
+    }
+
+    // Event listeners
+    nextBtn.addEventListener('click', () => {
+      // Check if all subcriteria for current question are answered
+      if (responses[currentQuestion].some(score => score === null)) {
+        alert('Please rate all sub-criteria before proceeding');
+        return;
+      }
+      
+      if (currentQuestion < criteria.length - 1) {
+        currentQuestion++;
+        showQuestion(currentQuestion);
+      } else {
+        calculateQMI();
+      }
+    });
+
+    prevBtn.addEventListener('click', () => {
+      currentQuestion--;
+      showQuestion(currentQuestion);
+    });
+
+    // Initialize
+    showQuestion(0);
   </script>
 </body>
 </html>
