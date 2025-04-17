@@ -91,11 +91,19 @@
       transform: translateY(-2px);
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
+    .company-input-container {
+      max-width: 500px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background-color: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
   </style>
 </head>
 <body class="min-h-screen">
   <div class="max-w-4xl mx-auto p-6">
-    <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+    <div id="companyInputSection" class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
       <div class="p-8">
         <div class="flex items-center mb-6">
           <div class="w-12 h-12 rounded-lg bg-blue-600 flex items-center justify-center mr-4">
@@ -105,7 +113,39 @@
           </div>
           <div>
             <h1 class="text-3xl font-bold text-gray-800">QMI Quality Assessment</h1>
-            <p class="text-gray-600">Evaluate your organization's quality management practices</p>
+            <p class="text-gray-600">Evaluate your organization's quality maturity practices</p>
+          </div>
+        </div>
+        
+        <div class="company-input-container">
+          <h2 class="text-xl font-semibold text-gray-800 mb-4">Enter Company Information</h2>
+          <div class="mb-4">
+            <label for="companyName" class="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
+            <input type="text" id="companyName" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter your company name" required>
+          </div>
+          <div class="mb-4">
+            <label for="assessorName" class="block text-sm font-medium text-gray-700 mb-1">Assessor Name</label>
+            <input type="text" id="assessorName" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Your name (optional)">
+          </div>
+          <button id="startAssessmentBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-md transition-all">
+            Start Assessment
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div id="assessmentSection" class="hidden bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+      <div class="p-8">
+        <div class="flex items-center mb-6">
+          <div class="w-12 h-12 rounded-lg bg-blue-600 flex items-center justify-center mr-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-3xl font-bold text-gray-800">QMI Quality Assessment</h1>
+            <p class="text-gray-600">Evaluate your organization's quality maturity practices</p>
+            <p class="text-sm text-gray-500 mt-1">Company: <span id="displayCompanyName"></span></p>
           </div>
         </div>
         
@@ -114,7 +154,6 @@
         </div>
         
         <form id="qmiForm" class="space-y-8">
-          <!-- Questions will be inserted here by JavaScript -->
         </form>
         
         <div class="flex justify-between mt-8 pt-6 border-t border-gray-100">
@@ -141,11 +180,12 @@
         </svg>
       </div>
       <h2 class="text-2xl font-bold text-gray-800 mb-4">Assessment Complete</h2>
+      <p class="text-gray-600 mb-2">Company: <span id="resultsCompanyName" class="font-medium"></span></p>
       <p id="qmiScore" class="text-4xl font-semibold mb-6"></p>
       <div class="radar-container">
         <canvas id="radarChart"></canvas>
       </div>
-      <p class="text-gray-600 max-w-md mx-auto mb-6">Your Quality Management Index score reflects your organization's current quality practices and areas for improvement.</p>
+      <p class="text-gray-600 max-w-md mx-auto mb-6">Your Quality Maturity Index score reflects your organization's current quality practices and areas for improvement.</p>
       <div class="flex justify-center gap-4">
         <button onclick="resetForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg shadow-md transition-all">
           Start New Assessment
@@ -161,7 +201,6 @@
   </div>
 
   <script>
-    // Initialize jsPDF
     const { jsPDF } = window.jspdf;
     
     const criteria = [
@@ -290,13 +329,39 @@
     const prevBtn = document.getElementById('prevBtn');
     const progressBar = document.getElementById('progressBar');
     const resultsSection = document.getElementById('resultsSection');
+    const companyInputSection = document.getElementById('companyInputSection');
+    const assessmentSection = document.getElementById('assessmentSection');
     const qmiScoreElement = document.getElementById('qmiScore');
+    const displayCompanyName = document.getElementById('displayCompanyName');
+    const resultsCompanyName = document.getElementById('resultsCompanyName');
+    const companyNameInput = document.getElementById('companyName');
+    const assessorNameInput = document.getElementById('assessorName');
+    const startAssessmentBtn = document.getElementById('startAssessmentBtn');
     let radarChart = null;
     let qmiScore = 0;
     let categoryAverages = [];
+    let companyName = '';
+    let assessorName = '';
+    let scoreMessage = ''; // Variable to store the score message (Good/Excellent/Needs Improvement)
     
-    // Store all responses
     const responses = Array(criteria.length).fill().map(() => Array(3).fill(null));
+
+    startAssessmentBtn.addEventListener('click', () => {
+      companyName = companyNameInput.value.trim();
+      if (!companyName) {
+        alert('Please enter your company name to continue');
+        return;
+      }
+      assessorName = assessorNameInput.value.trim();
+      
+      displayCompanyName.textContent = companyName;
+      resultsCompanyName.textContent = companyName;
+      
+      companyInputSection.classList.add('hidden');
+      assessmentSection.classList.remove('hidden');
+      
+      showQuestion(0);
+    });
 
     function showQuestion(index) {
       form.innerHTML = '';
@@ -329,10 +394,8 @@
 
       form.appendChild(section);
       
-      // Update progress bar
       progressBar.style.width = `${((index + 1) / criteria.length) * 100}%`;
       
-      // Update button visibility
       prevBtn.classList.toggle('hidden', index === 0);
       nextBtn.textContent = index === criteria.length - 1 ? 'Calculate Score' : 'Next';
     }
@@ -341,16 +404,13 @@
       const ratingNumber = element.querySelector('.rating-number');
       const value = parseInt(ratingNumber.dataset.value);
       
-      // Remove selected class from all options in this group
       const ratingScale = element.parentElement;
       ratingScale.querySelectorAll('.rating-number').forEach(el => {
         el.classList.remove('selected');
       });
       
-      // Add selected class to clicked option
       ratingNumber.classList.add('selected');
       
-      // Store the response
       responses[criteriaIndex][subcriteriaIndex] = value;
     }
 
@@ -368,9 +428,8 @@
 
       qmiScore = (weightedSum / totalWeight).toFixed(2);
       
-      // Display results
       let scoreColor = 'text-blue-600';
-      let scoreMessage = 'Good';
+      scoreMessage = 'Good';
       
       if (qmiScore >= 8) {
         scoreColor = 'text-green-600';
@@ -388,23 +447,19 @@
         <div class="text-lg ${scoreColor} mt-2">${scoreMessage}</div>
       `;
       
-      // Create radar chart
       createRadarChart(categoryAverages);
       
-      // Show results section
-      form.classList.add('hidden');
+      assessmentSection.classList.add('hidden');
       resultsSection.classList.remove('hidden');
     }
 
     function createRadarChart(categoryAverages) {
       const ctx = document.getElementById('radarChart').getContext('2d');
       
-      // Destroy previous chart if it exists
       if (radarChart) {
         radarChart.destroy();
       }
       
-      // Prepare data for radar chart
       const labels = criteria.map(c => c.label.replace(/^\d+\.\s/, ''));
       const data = {
         labels: labels,
@@ -420,7 +475,6 @@
         }]
       };
       
-      // Radar chart configuration
       const config = {
         type: 'radar',
         data: data,
@@ -470,51 +524,61 @@
         }
       };
       
-      // Create the radar chart
       radarChart = new Chart(ctx, config);
     }
 
     function generatePDF() {
-      // Create a new PDF document
-      const doc = new jsPDF();
+      const doc = new jsPDF('l');
       
-      // Add title and basic info
-      doc.setFontSize(20);
-      doc.setTextColor(29, 78, 216);
-      doc.text('Quality Management Index (QMI) Assessment Report', 105, 20, { align: 'center' });
-      
-      doc.setFontSize(12);
-      doc.setTextColor(0, 0, 0);
-      doc.text(`Assessment Date: ${new Date().toLocaleDateString()}`, 105, 30, { align: 'center' });
-      
-      // Add QMI score
+      // Header
       doc.setFontSize(16);
       doc.setTextColor(29, 78, 216);
-      doc.text('Overall QMI Score', 105, 45, { align: 'center' });
+      doc.text('QMI Assessment Report', 145, 15, { align: 'center' });
       
-      doc.setFontSize(32);
+      doc.setFontSize(10);
       doc.setTextColor(0, 0, 0);
-      doc.text(`${qmiScore}/10`, 105, 55, { align: 'center' });
+      doc.text(`Date: ${new Date().toLocaleDateString()}`, 145, 22, { align: 'center' });
+      doc.text(`Company: ${companyName}`, 145, 28, { align: 'center' });
+      if (assessorName) {
+        doc.text(`Assessor: ${assessorName}`, 145, 34, { align: 'center' });
+      }
       
-      // Add radar chart image
-      const radarCanvas = document.getElementById('radarChart');
-      const radarImage = radarCanvas.toDataURL('image/png');
-      doc.addImage(radarImage, 'PNG', 30, 65, 150, 100);
-      
-      // Add category scores table
+      // Score section
       doc.setFontSize(14);
       doc.setTextColor(29, 78, 216);
-      doc.text('Category Scores', 20, 175);
+      doc.text('Overall Score', 145, 45, { align: 'center' });
       
-      const headers = [['Category', 'Average Score', 'Weight']];
+      doc.setFontSize(28);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`${qmiScore}/10`, 145, 55, { align: 'center' });
+      
+      // Add the score message (Good/Excellent/Needs Improvement)
+      doc.setFontSize(12);
+      let scoreColor = [29, 78, 216]; // blue
+      if (scoreMessage === 'Excellent') scoreColor = [16, 185, 129]; // green
+      if (scoreMessage === 'Needs Improvement') scoreColor = [239, 68, 68]; // red
+      
+      doc.setTextColor(...scoreColor);
+      doc.text(`Assessment: ${scoreMessage}`, 145, 62, { align: 'center' });
+      
+      // Radar chart
+      const radarCanvas = document.getElementById('radarChart');
+      const radarImage = radarCanvas.toDataURL('image/png');
+      doc.addImage(radarImage, 'PNG', 20, 65, 100, 80);
+      
+      // Category scores table
+      doc.setFontSize(12);
+      doc.setTextColor(29, 78, 216);
+      doc.text('Category Scores', 145, 65);
+      
+      const headers = [['Category', 'Score']];
       const tableData = criteria.map((c, i) => [
         c.label.replace(/^\d+\.\s/, ''),
-        categoryAverages[i].toFixed(1),
-        c.weight
+        categoryAverages[i].toFixed(1)
       ]);
       
       doc.autoTable({
-        startY: 180,
+        startY: 70,
         head: headers,
         body: tableData,
         theme: 'grid',
@@ -526,69 +590,22 @@
           fillColor: [241, 245, 249]
         },
         columnStyles: {
-          0: { cellWidth: 'auto' },
-          1: { cellWidth: 30 },
-          2: { cellWidth: 20 }
-        }
+          0: { cellWidth: 'auto', fontSize: 8 },
+          1: { cellWidth: 15, fontSize: 8 }
+        },
+        margin: { left: 140 },
+        tableWidth: 110,
+        pageBreak: 'avoid',
+        styles: { 
+          cellPadding: 1,
+          fontSize: 8
+        },
+        rowPageBreak: 'avoid'
       });
       
-      // Add detailed responses
-      doc.setFontSize(14);
-      doc.setTextColor(29, 78, 216);
-      doc.text('Detailed Responses', 20, doc.autoTable.previous.finalY + 15);
-      
-      // Prepare detailed responses data
-      const detailedData = [];
-      criteria.forEach((c, i) => {
-        detailedData.push([
-          { content: c.label, colSpan: 3, styles: { fontStyle: 'bold', fillColor: [226, 232, 240] } }
-        ]);
-        c.subcriteria.forEach((sub, j) => {
-          detailedData.push([
-            sub,
-            responses[i][j],
-            getRatingDescription(responses[i][j])
-          ]);
-        });
-      });
-      
-      doc.autoTable({
-        startY: doc.autoTable.previous.finalY + 20,
-        head: [['Sub-Criteria', 'Rating (1-10)', 'Description']],
-        body: detailedData,
-        theme: 'grid',
-        headStyles: {
-          fillColor: [29, 78, 216],
-          textColor: [255, 255, 255]
-        },
-        alternateRowStyles: {
-          fillColor: [241, 245, 249]
-        },
-        columnStyles: {
-          0: { cellWidth: 'auto' },
-          1: { cellWidth: 30 },
-          2: { cellWidth: 50 }
-        },
-        didParseCell: function(data) {
-          if (data.row.index > 0 && data.column.index === 0 && data.cell.raw.colSpan) {
-            data.cell.styles = { fontStyle: 'bold', fillColor: [226, 232, 240] };
-          }
-        }
-      });
-      
-      // Save the PDF
-      doc.save(`QMI_Assessment_${new Date().toISOString().slice(0, 10)}.pdf`);
+      doc.save(`QMI_Report_${companyName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
     }
 
-    function getRatingDescription(rating) {
-      if (rating >= 9) return 'Excellent';
-      if (rating >= 7) return 'Very Good';
-      if (rating >= 5) return 'Good';
-      if (rating >= 3) return 'Fair';
-      return 'Poor';
-    }
-
-    // ===== ENHANCED CONFETTI EFFECT =====
     function triggerConfetti({ intensity = 'medium' } = {}) {
       const baseConfig = {
         particleCount: intensity === 'high' ? 150 : 100,
@@ -599,14 +616,12 @@
         scalar: 0.8
       };
 
-      // Main burst
       confetti({
         ...baseConfig,
         angle: 90,
         gravity: 0.5
       });
 
-      // Left diagonal burst
       setTimeout(() => {
         confetti({
           ...baseConfig,
@@ -616,7 +631,6 @@
         });
       }, 150);
 
-      // Right diagonal burst
       setTimeout(() => {
         confetti({
           ...baseConfig,
@@ -626,7 +640,6 @@
         });
       }, 300);
 
-      // Additional bursts for high scores
       if (intensity === 'high') {
         setTimeout(() => {
           confetti({
@@ -642,20 +655,22 @@
     function resetForm() {
       currentQuestion = 0;
       responses.forEach(arr => arr.fill(null));
-      form.classList.remove('hidden');
-      resultsSection.classList.add('hidden');
-      showQuestion(0);
+      companyNameInput.value = '';
+      assessorNameInput.value = '';
+      companyName = '';
+      assessorName = '';
       
-      // Destroy radar chart if it exists
+      resultsSection.classList.add('hidden');
+      assessmentSection.classList.add('hidden');
+      companyInputSection.classList.remove('hidden');
+      
       if (radarChart) {
         radarChart.destroy();
         radarChart = null;
       }
     }
 
-    // Event listeners
     nextBtn.addEventListener('click', () => {
-      // Check if all subcriteria for current question are answered
       if (responses[currentQuestion].some(score => score === null)) {
         alert('Please rate all sub-criteria before proceeding');
         return;
@@ -674,8 +689,9 @@
       showQuestion(currentQuestion);
     });
 
-    // Initialize
-    showQuestion(0);
+    companyInputSection.classList.remove('hidden');
+    assessmentSection.classList.add('hidden');
+    resultsSection.classList.add('hidden');
   </script>
 </body>
 </html>
