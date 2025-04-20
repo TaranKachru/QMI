@@ -670,18 +670,19 @@
     }
 
     nextBtn.addEventListener('click', () => {
-      if (responses[currentQuestion].some(score => score === null)) {
-        alert('Please rate all sub-criteria before proceeding');
-        return;
-      }
-      
-      if (currentQuestion < criteria.length - 1) {
-        currentQuestion++;
-        showQuestion(currentQuestion);
-      } else {
-        calculateQMI();
-      }
-    });
+  if (responses[currentQuestion].some(score => score === null)) {
+    alert('Please rate all sub-criteria before proceeding');
+    return;
+  }
+  
+  if (currentQuestion < criteria.length - 1) {
+    currentQuestion++;
+    showQuestion(currentQuestion);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    calculateQMI();
+  }
+});
 
     prevBtn.addEventListener('click', () => {
       currentQuestion--;
